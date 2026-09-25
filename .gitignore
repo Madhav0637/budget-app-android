@@ -17,3 +17,16 @@ local.properties
 # Android Studio per-user settings and Kotlin caches
 /.idea/
 .kotlin/
+
+# Release signing: the key and its passwords must never be committed
+keystore.properties
+*.jks
+*.keystore
+
+# Finished APKs for sharing
+dist/
+
+# Screen recordings and loose screenshots
+*.mp4
+*.mov
+Screenshot*.png
