@@ -4,84 +4,83 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.madhav0637.budgetapp.data.Category
-import com.madhav0637.budgetapp.data.CategoryWithCount
 import com.madhav0637.budgetapp.domain.CategoryError
 import com.madhav0637.budgetapp.domain.CategoryRules
-import kotlinx.coroutines.launch
+import com.madhav0637.budgetapp.domain.counted
+import com.madhav0637.budgetapp.ui.components.CircleIconButton
+import com.madhav0637.budgetapp.ui.components.EmojiTile
+import com.madhav0637.budgetapp.ui.components.HairlineDivider
+import com.madhav0637.budgetapp.ui.components.KokuButton
+import com.madhav0637.budgetapp.ui.components.KokuCard
+import com.madhav0637.budgetapp.ui.components.KokuTextField
+import com.madhav0637.budgetapp.ui.components.LocalToasts
+import com.madhav0637.budgetapp.ui.components.PageMargin
+import com.madhav0637.budgetapp.ui.components.SubScreen
+import com.madhav0637.budgetapp.ui.theme.Koku
+import com.madhav0637.budgetapp.ui.theme.KokuType
 
-private fun expenses(count: Int) = "$count ${if (count == 1) "expense" else "expenses"}"
+private fun expenses(count: Int) = counted(count, "expense")
 
 /** All categories, most-used first, with how many expenses each has. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriesScreen(viewModel: CategoriesViewModel, onBack: () -> Unit, onOpen: (Category) -> Unit) {
     val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val colors = Koku.colors
     var adding by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text("Categories") }, navigationIcon = { BackButton(onBack) }) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { adding = true }) { Icon(Icons.Filled.Add, contentDescription = "Add Category") }
-        },
-    ) { padding ->
-        LazyColumn(contentPadding = PaddingValues(bottom = 96.dp), modifier = Modifier.padding(padding)) {
-            items(categories, key = { it.category.id }) { item ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    modifier = Modifier.fillMaxWidth().clickable { onOpen(item.category) }.padding(horizontal = 16.dp, vertical = 14.dp),
-                ) {
-                    Text(item.category.emoji, fontSize = 26.sp)
-                    Text(item.category.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                    Text(expenses(item.expenseCount), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
+    SubScreen(
+        title = "Categories",
+        onBack = onBack,
+        actions = { CircleIconButton(Icons.Rounded.Add, "Add category", onClick = { adding = true }) },
+    ) {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = PageMargin).padding(top = 8.dp, bottom = 96.dp)) {
+            KokuCard(padding = 0.dp) {
+                categories.forEachIndexed { index, item ->
+                    if (index > 0) HairlineDivider(startIndent = 66.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { onOpen(item.category) }.padding(horizontal = 16.dp, vertical = 12.dp),
+                    ) {
+                        EmojiTile(item.category.emoji, size = 38.dp)
+                        Text(
+                            item.category.name,
+                            style = KokuType.body.copy(fontWeight = FontWeight.Medium),
+                            color = colors.ink,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(expenses(item.expenseCount), style = KokuType.subheadline, color = colors.ink2)
+                        Chevron()
+                    }
                 }
-                HorizontalDivider(Modifier.padding(start = 56.dp))
             }
         }
     }
@@ -99,6 +98,7 @@ private fun AddCategoryDialog(
     onAdd: (name: String, emoji: String, onError: (String) -> Unit) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val colors = Koku.colors
     var name by rememberSaveable { mutableStateOf("") }
     var emoji by rememberSaveable { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
@@ -106,14 +106,16 @@ private fun AddCategoryDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("New Category") },
+        containerColor = colors.surface,
+        shape = RoundedCornerShape(28.dp),
+        title = { Text("New category", style = KokuType.title3, color = colors.ink) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 CategoryFields(name, { name = it; error = null }, emoji, { emoji = it; error = null })
                 Text(
                     error ?: "Tap Emoji, then use the 🙂 key on the keyboard to pick one.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = KokuType.footnote,
+                    color = if (error != null) colors.warning else colors.ink2,
                 )
             }
         },
@@ -125,40 +127,33 @@ private fun AddCategoryDialog(
 /** Name and emoji fields, shared by adding and editing. The emoji box always keeps exactly one character. */
 @Composable
 private fun CategoryFields(name: String, onName: (String) -> Unit, emoji: String, onEmoji: (String) -> Unit) {
-    OutlinedTextField(
-        value = name,
-        onValueChange = onName,
-        label = { Text("Name") },
-        placeholder = { Text("e.g. Rent") },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-        modifier = Modifier.fillMaxWidth(),
-    )
-    OutlinedTextField(
-        value = emoji,
-        onValueChange = { onEmoji(CategoryRules.lastCharacter(it)) },
-        label = { Text("Emoji") },
-        placeholder = { Text("🙂") },
-        singleLine = true,
-        modifier = Modifier.fillMaxWidth(),
-    )
+    val colors = Koku.colors
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("Name", style = KokuType.footnote.copy(fontWeight = FontWeight.Medium), color = colors.ink2)
+        KokuTextField(
+            value = name,
+            onValueChange = onName,
+            placeholder = "e.g. Rent",
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+        )
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("Emoji", style = KokuType.footnote.copy(fontWeight = FontWeight.Medium), color = colors.ink2)
+        KokuTextField(value = emoji, onValueChange = { onEmoji(CategoryRules.lastCharacter(it)) }, placeholder = "🙂")
+    }
 }
 
 /** Edit a category's name and emoji, move all its expenses elsewhere, or delete it once it's empty. */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryDetailScreen(categoryId: String, viewModel: CategoriesViewModel, onBack: () -> Unit) {
     val all by viewModel.categories.collectAsStateWithLifecycle()
     val item = all.firstOrNull { it.category.id == categoryId }
-    val snackbar = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-    val showError: (String) -> Unit = { message -> scope.launch { snackbar.showSnackbar(message) } }
+    val colors = Koku.colors
+    val toasts = LocalToasts.current
+    val showError: (String) -> Unit = { message -> toasts.show(message, icon = Icons.Rounded.ErrorOutline) }
 
-    Scaffold(
-        topBar = { TopAppBar(title = { Text(item?.category?.name ?: "") }, navigationIcon = { BackButton(onBack) }) },
-        snackbarHost = { SnackbarHost(snackbar) },
-    ) { padding ->
-        if (item == null) return@Scaffold // just deleted; onBack has already been called
+    SubScreen(title = item?.category?.name ?: "", onBack = onBack) {
+        if (item == null) return@SubScreen // just deleted; onBack has already been called
         val category = item.category
         val others = all.filter { it.category.id != categoryId }.map { it.category }
 
@@ -178,26 +173,34 @@ fun CategoryDetailScreen(categoryId: String, viewModel: CategoriesViewModel, onB
 
         Column(
             verticalArrangement = Arrangement.spacedBy(14.dp),
-            modifier = Modifier.padding(padding).padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.verticalScroll(rememberScrollState()).padding(horizontal = PageMargin).padding(top = 8.dp, bottom = 96.dp),
         ) {
-            CategoryFields(name, { name = it }, emoji, { emoji = it })
-            Button(
+            KokuCard(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                CategoryFields(name, { name = it }, emoji, { emoji = it })
+            }
+            KokuButton(
+                "Save changes",
                 onClick = { viewModel.update(category, name, emoji, onDone = {}, onError = showError) },
                 enabled = canSave,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) { Text("Save Changes") }
+            )
 
             if (item.expenseCount > 0) {
                 Box {
-                    OutlinedButton(
+                    KokuButton(
+                        "Move all ${expenses(item.expenseCount)} to…",
                         onClick = { moveMenuOpen = true },
                         enabled = others.isNotEmpty(),
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
-                    ) { Text("Move all ${expenses(item.expenseCount)} to…") }
-                    DropdownMenu(expanded = moveMenuOpen, onDismissRequest = { moveMenuOpen = false }) {
+                        primary = false,
+                    )
+                    DropdownMenu(
+                        expanded = moveMenuOpen,
+                        onDismissRequest = { moveMenuOpen = false },
+                        containerColor = colors.surface,
+                        shape = RoundedCornerShape(18.dp),
+                    ) {
                         others.forEach { target ->
                             DropdownMenuItem(
-                                text = { Text("${target.emoji}  ${target.name}") },
+                                text = { Text("${target.emoji}  ${target.name}", style = KokuType.body, color = colors.ink) },
                                 onClick = {
                                     moveTarget = target
                                     moveMenuOpen = false
@@ -208,20 +211,22 @@ fun CategoryDetailScreen(categoryId: String, viewModel: CategoriesViewModel, onB
                 }
             }
 
-            OutlinedButton(
+            KokuButton(
+                "Delete category",
                 onClick = { confirmingDelete = true },
                 enabled = deleteBlockedReason == null,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) { Text("Delete Category") }
+                primary = false,
+                contentColor = colors.warning,
+            )
             deleteBlockedReason?.let {
-                Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(it, style = KokuType.footnote, color = colors.ink2, modifier = Modifier.padding(horizontal = 4.dp))
             }
         }
 
         moveTarget?.let { target ->
             AlertDialog(
                 onDismissRequest = { moveTarget = null },
+                containerColor = colors.surface,
                 title = { Text("Move ${expenses(item.expenseCount)}?") },
                 text = { Text("From ${category.emoji} ${category.name} to ${target.emoji} ${target.name}.") },
                 confirmButton = {
@@ -237,20 +242,16 @@ fun CategoryDetailScreen(categoryId: String, viewModel: CategoriesViewModel, onB
         if (confirmingDelete) {
             AlertDialog(
                 onDismissRequest = { confirmingDelete = false },
+                containerColor = colors.surface,
                 title = { Text("Delete ${category.emoji} ${category.name}?") },
                 confirmButton = {
                     TextButton(onClick = {
                         confirmingDelete = false
                         viewModel.delete(category, onDone = onBack, onError = showError)
-                    }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                    }) { Text("Delete", color = colors.warning) }
                 },
                 dismissButton = { TextButton(onClick = { confirmingDelete = false }) { Text("Cancel") } },
             )
         }
     }
-}
-
-@Composable
-private fun BackButton(onBack: () -> Unit) {
-    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
 }

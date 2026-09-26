@@ -17,6 +17,7 @@ object DefaultCategories {
 sealed class ExpenseError(message: String) : Exception(message) {
     data object EmptyMerchant : ExpenseError("Please enter what you spent on.")
     data object NonPositiveAmount : ExpenseError("Amount must be more than ₹0.")
+    data object CategoryNotFound : ExpenseError("That category no longer exists.")
 }
 
 object ExpenseRules {
@@ -27,4 +28,7 @@ object ExpenseRules {
         if (amount <= 0) throw ExpenseError.NonPositiveAmount
         return trimmed
     }
+
+    /** Trims a note, turning a blank one into null. */
+    fun cleanedNote(note: String?): String? = note?.trim()?.ifEmpty { null }
 }

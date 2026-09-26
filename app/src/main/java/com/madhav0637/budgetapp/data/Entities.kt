@@ -39,6 +39,11 @@ data class Expense(
     val amount: Long,
     val date: Instant,
     val categoryId: String,
+    /**
+     * An optional free-text note, e.g. "team dinner". Null when empty (see [com.madhav0637.budgetapp.domain.ExpenseRules.cleanedNote]).
+     * Added in version 2 of the database; [AppDatabase.MIGRATION_1_2] adds the column to existing phones.
+     */
+    val note: String? = null,
 )
 
 /** An expense together with its category, loaded in one query. */

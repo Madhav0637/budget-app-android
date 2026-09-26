@@ -4,42 +4,61 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.madhav0637.budgetapp.data.ExpenseWithCategory
+import com.madhav0637.budgetapp.domain.dayOrTime
 import com.madhav0637.budgetapp.domain.inr
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+import com.madhav0637.budgetapp.domain.timeOfDay
+import com.madhav0637.budgetapp.ui.theme.Koku
+import com.madhav0637.budgetapp.ui.theme.KokuType
 
-private val timeOnly = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
-private val dateAndTime = DateTimeFormatter.ofPattern("d MMM, h:mm a", Locale.ENGLISH)
+/** Where the text of an [ExpenseRow] starts, for lining up dividers: the 42dp tile plus 12dp spacing. */
+val ExpenseRowTextIndent = 54.dp
 
-/** One expense in a list: category emoji, merchant, when, and amount. Shared by History and the Dashboard. */
+/**
+ * One expense in a list: category emoji, merchant, category and when, an optional note, and the amount.
+ * Activity groups rows under a day heading, so it shows only the time; Home shows the day too.
+ */
 @Composable
-fun ExpenseRow(item: ExpenseWithCategory, modifier: Modifier = Modifier, showsDate: Boolean = false) {
-    val time = item.expense.date.atZone(ZoneId.systemDefault())
+fun ExpenseRow(item: ExpenseWithCategory, modifier: Modifier = Modifier, showsDay: Boolean = false) {
+    val colors = Koku.colors
+    val expense = item.expense
+    val details = buildAnnotatedString {
+        append(item.category.name)
+        append(" · ")
+        append(if (showsDay) dayOrTime(expense.date) else timeOfDay(expense.date))
+        expense.note?.let { note ->
+            append(" · ")
+            withStyle(SpanStyle(fontStyle = FontStyle.Italic)) { append(note) }
+        }
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
     ) {
-        Text(item.category.emoji, fontSize = 26.sp)
+        EmojiTile(item.category.emoji)
         Column(Modifier.weight(1f)) {
-            Text(item.expense.merchant, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                (if (showsDate) dateAndTime else timeOnly).format(time),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                expense.merchant,
+                style = KokuType.body.copy(fontWeight = FontWeight.SemiBold),
+                color = colors.ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
+            Text(details, style = KokuType.footnote, color = colors.ink2, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
-        Text(item.expense.amount.inr(), style = MaterialTheme.typography.bodyLarge)
+        Text(expense.amount.inr(), style = KokuType.body.copy(fontWeight = FontWeight.SemiBold), color = colors.ink)
     }
 }

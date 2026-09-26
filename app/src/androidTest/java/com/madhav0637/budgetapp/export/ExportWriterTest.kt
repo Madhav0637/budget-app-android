@@ -43,16 +43,16 @@ class ExportWriterTest {
     @Test
     fun writesARealCsvFile() {
         val file = ExportWriter.write(ExportFormat.Csv, expenses(3), directory, Instant.parse("2026-09-24T06:00:00Z"), zone)
-        assertEquals("BudgetApp-expenses-2026-09-24.csv", file.name)
+        assertEquals("Koku-expenses-2026-09-24.csv", file.name)
         val lines = file.readLines()
-        assertEquals("Date,Merchant,Category,Amount", lines.first())
+        assertEquals("Date,Merchant,Category,Amount,Note", lines.first())
         assertEquals(4, lines.size)
     }
 
     @Test
     fun writesAValidPdfThatFitsOnOnePageWhenShort() {
         val file = ExportWriter.write(ExportFormat.Pdf, expenses(3), directory, Instant.parse("2026-09-24T06:00:00Z"), zone)
-        assertEquals("BudgetApp-expenses-2026-09-24.pdf", file.name)
+        assertEquals("Koku-expenses-2026-09-24.pdf", file.name)
         assertTrue(file.readBytes().take(4).toByteArray().contentEquals("%PDF".toByteArray()))
         assertEquals(1, pageCount(file))
     }

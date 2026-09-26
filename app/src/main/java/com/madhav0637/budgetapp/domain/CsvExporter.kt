@@ -7,9 +7,12 @@ import java.util.Locale
 
 /** Turns expenses into a CSV file that opens cleanly in Excel, Numbers or Google Sheets. Same format as iOS. */
 object CsvExporter {
-    const val HEADER = "Date,Merchant,Category,Amount"
+    const val HEADER = "Date,Merchant,Category,Amount,Note"
 
-    /** Oldest expense first. Dates are `yyyy-MM-dd HH:mm` in the given time zone; amounts are plain whole rupees. */
+    /**
+     * Oldest expense first. Dates are `yyyy-MM-dd HH:mm` in the given time zone; amounts are plain whole rupees;
+     * the note column is empty when there's no note.
+     */
     fun csv(expenses: List<ExpenseWithCategory>, zone: ZoneId = ZoneId.systemDefault()): String {
         val dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ROOT).withZone(zone)
         val rows = expenses.sortedBy { it.expense.date }.map { item ->
@@ -18,6 +21,7 @@ object CsvExporter {
                 escape(item.expense.merchant),
                 escape(item.category.name),
                 item.expense.amount.toString(),
+                escape(item.expense.note ?: ""),
             ).joinToString(",")
         }
         return (listOf(HEADER) + rows).joinToString("\n") + "\n"

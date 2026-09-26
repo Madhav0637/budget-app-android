@@ -15,5 +15,5 @@ fun at(year: Int, month: Int, day: Int, hour: Int = 12, minute: Int = 0): Instan
 
 fun category(name: String, emoji: String = "🧪") = Category(name = name, emoji = emoji)
 
-fun expense(amount: Long, category: Category, merchant: String = "Shop", date: Instant = at(2026, 9, 15)) =
-    ExpenseWithCategory(Expense(merchant = merchant, amount = amount, date = date, categoryId = category.id), category)
+fun expense(amount: Long, category: Category, merchant: String = "Shop", date: Instant = at(2026, 9, 15), note: String? = null) =
+    ExpenseWithCategory(Expense(merchant = merchant, amount = amount, date = date, categoryId = category.id, note = note), category)

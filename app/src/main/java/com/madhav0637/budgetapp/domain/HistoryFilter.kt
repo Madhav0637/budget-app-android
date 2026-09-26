@@ -1,23 +1,25 @@
 package com.madhav0637.budgetapp.domain
 
 import com.madhav0637.budgetapp.data.ExpenseWithCategory
-import java.text.Normalizer
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/** The History screen's search, category filter and day grouping, kept free of UI code so it can be tested. */
+/** The Activity screen's search, category filter and day grouping, kept free of UI code so it can be tested. */
 data class HistoryFilter(val searchText: String = "", val categoryId: String? = null) {
-    data class DayGroup(val day: LocalDate, val expenses: List<ExpenseWithCategory>)
+    data class DayGroup(val day: LocalDate, val expenses: List<ExpenseWithCategory>) {
+        /** What was spent that day. */
+        val total: Long get() = expenses.sumOf { it.expense.amount }
+    }
 
     val isActive: Boolean get() = searchText.isNotBlank() || categoryId != null
 
     /** Merchant search ignores case and accents; it combines with the category filter. */
     fun apply(expenses: List<ExpenseWithCategory>): List<ExpenseWithCategory> {
-        val query = fold(searchText.trim())
+        val query = foldForSearch(searchText.trim())
         return expenses.filter { item ->
-            (query.isEmpty() || fold(item.expense.merchant).contains(query)) &&
+            (query.isEmpty() || foldForSearch(item.expense.merchant).contains(query)) &&
                 (categoryId == null || item.category.id == categoryId)
         }
     }
@@ -40,11 +42,5 @@ data class HistoryFilter(val searchText: String = "", val categoryId: String? = 
             day.year == today.year -> dayFormat.format(day)
             else -> dayWithYearFormat.format(day)
         }
-
-        /** Lowercase with accents removed, so "Café" matches "cafe". */
-        private fun fold(text: String): String =
-            Normalizer.normalize(text, Normalizer.Form.NFD)
-                .replace(Regex("\\p{Mn}+"), "")
-                .lowercase(Locale.ROOT)
     }
 }

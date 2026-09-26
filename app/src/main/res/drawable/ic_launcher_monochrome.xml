@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Koku mark in one colour, for Android 13+ themed icons. The launcher tints it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.14"
+        android:scaleY="0.14"
+        android:translateX="18.86"
+        android:translateY="21.1">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M122,194A72,72 0,1 1,266 194A72,72 0,1 1,122 194Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M163,266H225A41,41 0,0 1,225 348H163A41,41 0,0 1,163 266Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M266,220A57,57 0,0 1,380 220V291A57,57 0,0 1,266 291Z" />
+    </group>
+</vector>

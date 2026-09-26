@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.BudgetApp" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Compose draws everything; the window background only shows while the app starts. -->
+    <style name="Theme.BudgetApp" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/koku_canvas</item>
+    </style>
 
     <!-- See-through window, so the quick-entry pop-up floats over whatever app is on screen. -->
     <style name="Theme.BudgetApp.QuickEntry" parent="android:Theme.Material.Light.NoActionBar">

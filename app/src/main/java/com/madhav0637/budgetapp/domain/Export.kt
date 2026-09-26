@@ -15,9 +15,9 @@ enum class ExportFormat(val extension: String, val mimeType: String) {
 object ExportNames {
     private val day = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ROOT)
 
-    /** A file name like `BudgetApp-expenses-2026-09-24.pdf`, the same as on iOS. */
+    /** A file name like `Koku-expenses-2026-09-24.pdf`, the same as on iOS. */
     fun fileName(format: ExportFormat, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()): String =
-        "BudgetApp-expenses-${day.format(now.atZone(zone))}.${format.extension}"
+        "Koku-expenses-${day.format(now.atZone(zone))}.${format.extension}"
 }
 
 /**
@@ -50,7 +50,7 @@ data class ReportContent(
             }
 
             return ReportContent(
-                title = "Expense Report",
+                title = "Koku Expense Report",
                 subtitle = listOfNotNull(range, count, generated).joinToString(" · "),
                 total = summary.total.inr(),
                 categoryRows = summary.categoryTotals.map {

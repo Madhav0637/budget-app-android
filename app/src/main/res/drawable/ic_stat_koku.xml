@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Koku mark as a notification icon: white shapes that Android tints. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <group
+        android:scaleX="0.0743"
+        android:scaleY="0.0743"
+        android:translateX="-6.65"
+        android:translateY="-5.46">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M122,194A72,72 0,1 1,266 194A72,72 0,1 1,122 194Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M163,266H225A41,41 0,0 1,225 348H163A41,41 0,0 1,163 266Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M266,220A57,57 0,0 1,380 220V291A57,57 0,0 1,266 291Z" />
+    </group>
+</vector>

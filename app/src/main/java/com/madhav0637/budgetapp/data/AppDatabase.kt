@@ -8,6 +8,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.madhav0637.budgetapp.domain.DefaultCategories
 import java.time.Instant
@@ -21,16 +22,34 @@ class Converters {
     fun toInstant(value: Long): Instant = Instant.ofEpochMilli(value)
 }
 
-/** The single on-device store, shared by the app's screens and the quick-entry pop-up. */
-@Database(entities = [Category::class, Expense::class], version = 1)
+/**
+ * The single on-device store, shared by the app's screens and the quick-entry pop-up.
+ *
+ * Every change to the tables needs a new version number and a migration in [MIGRATIONS]. Room then upgrades the
+ * database on phones that already have data. It must never fall back to wiping the database.
+ */
+@Database(entities = [Category::class, Expense::class], version = 2)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun expenseDao(): ExpenseDao
 
     companion object {
+        /** Version 2 (Koku 2.0) adds an optional note to each expense. Existing expenses get no note. */
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE expenses ADD COLUMN note TEXT")
+            }
+        }
+
+        /** Every migration, oldest first. The on-device migration test uses the same list. */
+        val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)
+
+        const val FILE_NAME = "budget.db"
+
         fun create(context: Context): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, "budget.db")
+            Room.databaseBuilder(context, AppDatabase::class.java, FILE_NAME)
+                .addMigrations(*MIGRATIONS)
                 .addCallback(SeedDefaults)
                 .build()
 

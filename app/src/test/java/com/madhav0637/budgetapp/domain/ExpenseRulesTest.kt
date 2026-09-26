@@ -1,6 +1,7 @@
 package com.madhav0637.budgetapp.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -28,6 +29,17 @@ class ExpenseRulesTest {
     fun errorMessagesMatchIOS() {
         assertEquals("Please enter what you spent on.", ExpenseError.EmptyMerchant.message)
         assertEquals("Amount must be more than ₹0.", ExpenseError.NonPositiveAmount.message)
+        assertEquals("That category no longer exists.", ExpenseError.CategoryNotFound.message)
+    }
+
+    @Test
+    fun notesAreTrimmed() {
+        assertEquals("team dinner", ExpenseRules.cleanedNote("  team dinner \n"))
+    }
+
+    @Test
+    fun blankNotesBecomeNull() {
+        for (note in listOf(null, "", "   ", "\n\t")) assertNull(ExpenseRules.cleanedNote(note))
     }
 
     @Test
@@ -58,5 +70,35 @@ class FormattingTest {
     @Test
     fun amountBoxKeepsOnlyDigits() {
         assertEquals("1250", digitsOnly("₹1,250.-x"))
+    }
+
+    @Test
+    fun groupingWithoutTheRupeeSign() {
+        assertEquals("19,168", 19_168L.indianGrouped())
+        assertEquals("1,23,456", 1_23_456L.indianGrouped())
+        assertEquals("0", 0L.indianGrouped())
+    }
+
+    @Test
+    fun countsUseTheRightWord() {
+        assertEquals("1 expense", counted(1, "expense"))
+        assertEquals("3 expenses", counted(3, "expense"))
+        assertEquals("2 categories", counted(2, "category", "categories"))
+    }
+
+    @Test
+    fun sharesAreWholePercentages() {
+        assertEquals("26%", percent(0.2649))
+        assertEquals("0%", percent(0.0))
+        assertEquals("100%", percent(1.0))
+    }
+
+    @Test
+    fun dayOrTimeForRowsWithoutADayHeading() {
+        val now = at(2026, 9, 26, 14)
+        assertEquals("9:39 PM", dayOrTime(at(2026, 9, 26, 21, 39), now, IST))
+        assertEquals("Yesterday", dayOrTime(at(2026, 9, 25, 9), now, IST))
+        assertEquals("21 Sep", dayOrTime(at(2026, 9, 21), now, IST))
+        assertEquals("31 Dec 2025", dayOrTime(at(2025, 12, 31), now, IST))
     }
 }

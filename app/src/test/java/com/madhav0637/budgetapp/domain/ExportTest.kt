@@ -16,8 +16,8 @@ class ExportTest {
     @Test
     fun fileNamesHaveTheDateAndTheRightExtension() {
         val date = at(2026, 9, 4, 23, 30)
-        assertEquals("BudgetApp-expenses-2026-09-04.csv", ExportNames.fileName(ExportFormat.Csv, date, IST))
-        assertEquals("BudgetApp-expenses-2026-09-04.pdf", ExportNames.fileName(ExportFormat.Pdf, date, IST))
+        assertEquals("Koku-expenses-2026-09-04.csv", ExportNames.fileName(ExportFormat.Csv, date, IST))
+        assertEquals("Koku-expenses-2026-09-04.pdf", ExportNames.fileName(ExportFormat.Pdf, date, IST))
     }
 
     @Test
@@ -29,7 +29,7 @@ class ExportTest {
     @Test
     fun reportHasTitleDateRangeCountAndTotal() {
         val report = ReportContent.from(expenses, generatedAt = at(2026, 9, 24), zone = IST)
-        assertEquals("Expense Report", report.title)
+        assertEquals("Koku Expense Report", report.title)
         assertEquals("2 Sep 2026 – 20 Sep 2026 · 3 expenses · Generated 24 Sep 2026", report.subtitle)
         assertEquals("₹2,680", report.total)
     }

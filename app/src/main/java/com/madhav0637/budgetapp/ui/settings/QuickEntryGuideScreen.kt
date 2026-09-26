@@ -6,101 +6,103 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
+import androidx.compose.material.icons.automirrored.rounded.AddToHomeScreen
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import com.madhav0637.budgetapp.R
 import com.madhav0637.budgetapp.tile.QuickEntryTileService
+import com.madhav0637.budgetapp.ui.components.KokuButton
+import com.madhav0637.budgetapp.ui.components.KokuCard
+import com.madhav0637.budgetapp.ui.components.PageMargin
+import com.madhav0637.budgetapp.ui.components.SubScreen
 import com.madhav0637.budgetapp.ui.quickentry.QuickEntryActivity
+import com.madhav0637.budgetapp.ui.theme.Koku
+import com.madhav0637.budgetapp.ui.theme.KokuType
 
-/** How to open the Log Expense pop-up quickly, with one-tap buttons for the tile and a home-screen icon. */
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * How to open the Log Expense pop-up quickly, as numbered steps, with one-tap buttons for the tile and a
+ * home-screen icon. Android's version of the iOS Back Tap guide.
+ */
 @Composable
 fun QuickEntryGuideScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Set Up Quick Entry") },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
-            )
-        },
-    ) { padding ->
+    val colors = Koku.colors
+    SubScreen(title = "Set up quick entry", onBack = onBack) {
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            modifier = Modifier.verticalScroll(rememberScrollState()).padding(horizontal = PageMargin).padding(top = 4.dp, bottom = 96.dp),
         ) {
             Text(
-                "Log an expense in a few seconds without opening the app. Pick any of these — they all open the same pop-up.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                "Log an expense in about five seconds, without opening Koku. Any of these opens the same small pop-up.",
+                style = KokuType.subheadline,
+                color = colors.ink2,
+                modifier = Modifier.padding(bottom = 4.dp),
             )
 
-            GuideCard(
-                emoji = "⚡",
-                title = "Quick Settings tile — works on every phone",
-                steps = "Swipe down from the top twice, tap the pencil (Edit), and drag “Log Expense” into your tiles.",
-            ) {
+            Step(1, "Add the Quick Settings tile", "Works on every phone. Swipe down from the top twice, tap the pencil (Edit), and drag “Log Expense” into your tiles.") {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    Button(onClick = { requestTile(context) }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                        Text("Add the tile for me")
-                    }
+                    KokuButton("Add the tile for me", onClick = { requestTile(context) }, icon = Icons.Rounded.Bolt, height = 48.dp)
                 }
             }
-
-            GuideCard(
-                emoji = "📌",
-                title = "Home-screen icon — works on every phone",
-                steps = "Long-press the BudgetApp icon and tap “Log Expense”, or drag it onto your home screen.",
-            ) {
+            Step(2, "Or put an icon on your home screen", "Long-press the Koku icon and tap “Log Expense”, or drag it onto your home screen.") {
                 if (ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
-                    OutlinedButton(onClick = { pinShortcut(context) }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                        Text("Put a Log Expense icon on my home screen")
-                    }
+                    KokuButton("Pin a Log Expense icon", onClick = { pinShortcut(context) }, primary = false, icon = Icons.AutoMirrored.Rounded.AddToHomeScreen, height = 48.dp)
                 }
             }
-
-            GuideCard(
-                emoji = "👆",
-                title = "Your phone's own gesture",
-                steps = "Most phones can open an app with a gesture. Set it to open “Log Expense”:\n\n" +
+            Step(
+                3,
+                "Or use your phone's own gesture",
+                "Most phones can open an app with a gesture. Set it to open “Log Expense”:\n" +
                     "• Samsung: Settings → Advanced features → Side button → Double press → Open app\n" +
                     "• Google Pixel: Settings → System → Gestures → Quick Tap → Open app\n" +
                     "• Other brands: search Settings for “gesture” or “quick launch”",
+            )
+            Step(4, "Try it", "With your phone unlocked, tap the tile, the icon or your gesture. Answer the three questions and the expense is saved. Koku stays closed.")
+
+            Text(
+                "From the lock screen, the tile asks you to unlock first. If an entry takes you past 80% or 100% of your monthly budget, you'll get a notification.",
+                style = KokuType.footnote,
+                color = colors.ink2,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp),
             )
         }
     }
 }
 
+/** One numbered step: a highlight circle with the number, a title and the details. */
 @Composable
-private fun GuideCard(emoji: String, title: String, steps: String, action: @Composable () -> Unit = {}) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(16.dp)) {
-            Text("$emoji  $title", style = MaterialTheme.typography.titleMedium)
-            Text(steps, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            action()
+private fun Step(number: Int, title: String, detail: String, action: @Composable () -> Unit = {}) {
+    val colors = Koku.colors
+    KokuCard(padding = 16.dp) {
+        Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.Top) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.size(32.dp).background(colors.highlightFill, CircleShape)) {
+                Text("$number", style = KokuType.headline.copy(fontWeight = FontWeight.Bold), color = colors.onHighlight)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
+                Text(title, style = KokuType.headline, color = colors.ink)
+                Text(detail, style = KokuType.subheadline, color = colors.ink2)
+                Box(Modifier.padding(top = 6.dp)) { action() }
+            }
         }
     }
 }

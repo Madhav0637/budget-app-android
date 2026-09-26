@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Budget alerts after an entry from the quick-entry pop-up. Asked for on Android 13+ when alerts are used. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".BudgetApplication"
         android:allowBackup="true"
@@ -16,6 +19,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:configChanges="uiMode"
             android:label="@string/app_name"
             android:theme="@style/Theme.BudgetApp"
             android:windowSoftInputMode="adjustResize">
@@ -32,9 +36,11 @@
             The quick-entry pop-up. It is also a second launcher entry ("Log Expense"), because brand gesture
             settings (Samsung side-button double press, Pixel Quick Tap, ...) can open an app but not a screen.
             Its own empty task affinity keeps it separate from the main app, so it closes back to whatever was open.
+            Both activities handle uiMode themselves, so switching Koku's Light / Dark theme doesn't restart them.
         -->
         <activity
             android:name=".ui.quickentry.QuickEntryActivity"
+            android:configChanges="uiMode"
             android:excludeFromRecents="true"
             android:exported="true"
             android:label="@string/log_expense"

@@ -8,7 +8,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.madhav0637.budgetapp.ui.theme.BudgetAppTheme
+import com.madhav0637.budgetapp.BudgetApplication
+import com.madhav0637.budgetapp.notifications.BudgetNotifier
+import com.madhav0637.budgetapp.ui.theme.KokuTheme
 
 /**
  * The quick-entry pop-up. Its window is see-through, so it floats over whatever app was on screen.
@@ -21,15 +23,22 @@ class QuickEntryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val settings = (application as BudgetApplication).settings
         setContent {
-            BudgetAppTheme {
+            val appearance by settings.appearance.collectAsStateWithLifecycle()
+            val highlight by settings.highlight.collectAsStateWithLifecycle()
+            KokuTheme(appearance, highlight) {
                 val categories by viewModel.categories.collectAsStateWithLifecycle()
                 QuickEntryScreen(
                     categories = categories,
                     onSave = { merchant, amount, category ->
                         viewModel.save(
                             merchant, amount, category,
-                            onSaved = ::finish, // silent save, like iOS
+                            onSaved = { alert ->
+                                // Silent, like iOS, unless this expense takes the month past 80% or 100% of the budget.
+                                alert?.let { BudgetNotifier.post(applicationContext, it) }
+                                finish()
+                            },
                             onError = { Toast.makeText(this, it, Toast.LENGTH_LONG).show() },
                         )
                     },

@@ -47,6 +47,7 @@ class HistoryFilterTest {
             groups.map { it.day },
         )
         assertEquals(listOf("Swiggy", "Uber"), groups.last().expenses.map { it.expense.merchant })
+        assertEquals(listOf(400L, 90L, 430L), groups.map { it.total })
     }
 
     @Test
@@ -67,15 +68,31 @@ class CsvExporterTest {
 
     @Test
     fun noExpensesGivesJustTheHeader() {
-        assertEquals(listOf("Date,Merchant,Category,Amount"), lines())
+        assertEquals(listOf("Date,Merchant,Category,Amount,Note"), lines())
     }
 
     @Test
     fun oneRowPerExpenseOldestFirst() {
         assertEquals(
-            listOf("Date,Merchant,Category,Amount", "2026-09-01 12:00,First,Food,1", "2026-09-23 20:05,Swiggy,Food,1250"),
+            listOf("Date,Merchant,Category,Amount,Note", "2026-09-01 12:00,First,Food,1,", "2026-09-23 20:05,Swiggy,Food,1250,"),
             lines(expense(1250, food, "Swiggy", at(2026, 9, 23, 20, 5)), expense(1, food, "First", at(2026, 9, 1))),
         )
+    }
+
+    @Test
+    fun datesUseTheGivenTimeZone() {
+        // 20:05 in India is 14:35 UTC.
+        val csv = CsvExporter.csv(listOf(expense(10, food, date = at(2026, 9, 23, 20, 5))), java.time.ZoneOffset.UTC)
+        assertTrue(csv.contains("2026-09-23 14:35,"))
+    }
+
+    @Test
+    fun notesGoInTheLastColumnAndAreEscaped() {
+        assertEquals(
+            "2026-09-23 21:00,Zomato,Food,420,\"team dinner, office\"",
+            lines(expense(420, food, "Zomato", at(2026, 9, 23, 21), note = "team dinner, office")).last(),
+        )
+        assertEquals("2026-09-23 21:00,Zomato,Food,420,'=1+1", lines(expense(420, food, "Zomato", at(2026, 9, 23, 21), note = "=1+1")).last())
     }
 
     @Test
@@ -96,7 +113,7 @@ class CsvExporterTest {
     @Test
     fun categoryNamesAreEscapedToo() {
         assertEquals(
-            "2026-09-01 12:00,Landlord,\"Bills, Rent\",15000",
+            "2026-09-01 12:00,Landlord,\"Bills, Rent\",15000,",
             lines(expense(15000, category("Bills, Rent"), "Landlord", at(2026, 9, 1))).last(),
         )
     }

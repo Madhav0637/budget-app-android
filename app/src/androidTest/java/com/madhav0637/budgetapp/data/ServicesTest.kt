@@ -2,6 +2,9 @@ package com.madhav0637.budgetapp.data
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.madhav0637.budgetapp.domain.BudgetAlerts
+import com.madhav0637.budgetapp.domain.BudgetService
+import com.madhav0637.budgetapp.domain.BudgetSettings
 import com.madhav0637.budgetapp.domain.CategoryError
 import com.madhav0637.budgetapp.domain.CategoryService
 import com.madhav0637.budgetapp.domain.ExpenseError
@@ -66,7 +69,7 @@ class ServicesTest {
         assertEquals("Swiggy", allExpenses().single().expense.merchant)
 
         val newDate = Instant.ofEpochSecond(2_000)
-        expenses.update(saved, "Uber", 180, transport.id, newDate)
+        expenses.update(saved, "Uber", 180, transport.id, newDate, note = null)
         val edited = allExpenses().single()
         assertEquals(listOf("Uber", 180L, "Transport", newDate), listOf(edited.expense.merchant, edited.expense.amount, edited.category.name, edited.expense.date))
 
@@ -86,7 +89,7 @@ class ServicesTest {
     fun invalidEditChangesNothing() = runBlocking {
         val food = categories.add("Food", "🍔")
         val saved = expenses.add("Swiggy", 250, food.id)
-        assertFails<ExpenseError.NonPositiveAmount> { runBlocking { expenses.update(saved, "Uber", 0, food.id, Instant.now()) } }
+        assertFails<ExpenseError.NonPositiveAmount> { runBlocking { expenses.update(saved, "Uber", 0, food.id, Instant.now(), "note") } }
         assertEquals(saved, allExpenses().single().expense)
     }
 
@@ -99,6 +102,96 @@ class ServicesTest {
 
         expenses.restore(saved)
         assertEquals(saved, allExpenses().single().expense) // same id, merchant, amount and time
+    }
+
+    // MARK: Notes
+
+    @Test
+    fun savesATrimmedNote() = runBlocking {
+        val food = categories.add("Food", "🍔")
+        val saved = expenses.add("Zomato", 420, food.id, note = "  team dinner \n")
+        assertEquals("team dinner", saved.note)
+        assertEquals("team dinner", allExpenses().single().expense.note)
+    }
+
+    @Test
+    fun blankNoteIsStoredAsNull() = runBlocking {
+        val food = categories.add("Food", "🍔")
+        for (note in listOf(null, "", "   ")) expenses.add("Zomato", 420, food.id, note = note)
+        assertTrue(allExpenses().all { it.expense.note == null })
+    }
+
+    @Test
+    fun updateCanChangeAndRemoveTheNote() = runBlocking {
+        val food = categories.add("Food", "🍔")
+        val saved = expenses.add("Zomato", 420, food.id, note = "lunch")
+        val changed = expenses.update(saved, "Zomato", 420, food.id, saved.date, note = "dinner")
+        assertEquals("dinner", allExpenses().single().expense.note)
+        expenses.update(changed, "Zomato", 420, food.id, saved.date, note = " ")
+        assertEquals(null, allExpenses().single().expense.note)
+    }
+
+    @Test
+    fun restorePutsADeletedExpenseBackExactlyWithItsNote() = runBlocking {
+        val food = categories.add("Food", "🍔")
+        val saved = expenses.add("Swiggy", 310, food.id, Instant.ofEpochSecond(1_000), note = "late night")
+        expenses.delete(saved)
+        expenses.restore(saved)
+        assertEquals(saved, allExpenses().single().expense) // same id, merchant, amount, time and note
+    }
+
+    @Test
+    fun restoreFailsWhenTheCategoryIsGone() = runBlocking {
+        categories.add("Other", "📦")
+        val spare = categories.add("Spare", "🧪")
+        val saved = expenses.add("Shop", 50, spare.id)
+        expenses.delete(saved)
+        categories.delete(spare)
+        assertFails<ExpenseError.CategoryNotFound> { runBlocking { expenses.restore(saved) } }
+        assertTrue(allExpenses().isEmpty())
+    }
+
+    // MARK: Budget alerts around a save
+
+    private class TestBudgetSettings(override var currentBudget: Long = 0, override var alertsEnabled: Boolean = true) : BudgetSettings {
+        override var lastAlertMonth: String? = null
+        override var lastAlertLevel: Int = 0
+    }
+
+    @Test
+    fun budgetServiceAlertsWhenASaveCrossesALevel() = runBlocking {
+        val food = categories.add("Food", "🍔")
+        val settings = TestBudgetSettings(currentBudget = 1000)
+        val budget = BudgetService(db.expenseDao(), settings)
+        val now = Instant.now()
+        expenses.add("Lunch", 700, food.id, now)
+
+        val alert = budget.alertAround(now) { expenses.add("Dinner", 150, food.id, now) }
+
+        assertEquals(BudgetAlerts.Level.Nearly, alert?.level)
+        assertEquals(850L, alert?.spent)
+        assertEquals(null, budget.alertAround(now) { expenses.add("Tea", 20, food.id, now) }) // already told this month
+    }
+
+    @Test
+    fun budgetServiceStaysQuietWithoutABudgetOrWithAlertsOff() = runBlocking {
+        val food = categories.add("Food", "🍔")
+        val settings = TestBudgetSettings()
+        val budget = BudgetService(db.expenseDao(), settings)
+        assertEquals(null, budget.alertAround { expenses.add("Laptop", 5000, food.id) }) // no budget
+
+        settings.currentBudget = 1000
+        settings.alertsEnabled = false
+        assertEquals(null, budget.alertAround { expenses.add("Phone", 5000, food.id) })
+    }
+
+    @Test
+    fun budgetServiceIgnoresExpensesInOtherMonths() = runBlocking {
+        val food = categories.add("Food", "🍔")
+        val budget = BudgetService(db.expenseDao(), TestBudgetSettings(currentBudget = 1000))
+        val now = Instant.now()
+        val lastMonth = now.atZone(java.time.ZoneId.systemDefault()).minusMonths(1).toInstant()
+        assertEquals(null, budget.alertAround(now) { expenses.add("Old", 5000, food.id, lastMonth) })
     }
 
     // MARK: Category order

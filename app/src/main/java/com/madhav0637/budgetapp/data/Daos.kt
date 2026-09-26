@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 @Dao
 interface CategoryDao {
@@ -27,6 +28,9 @@ interface CategoryDao {
 
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun count(): Int
+
+    @Query("SELECT COUNT(*) FROM categories")
+    fun observeCount(): Flow<Int>
 
     @Query("SELECT COUNT(*) FROM expenses WHERE categoryId = :categoryId")
     suspend fun expenseCount(categoryId: String): Int
@@ -63,6 +67,9 @@ interface ExpenseDao {
     @Insert
     suspend fun insert(expense: Expense)
 
+    @Insert
+    suspend fun insertAll(expenses: List<Expense>)
+
     @Update
     suspend fun update(expense: Expense)
 
@@ -73,4 +80,11 @@ interface ExpenseDao {
     @Transaction
     @Query("SELECT * FROM expenses ORDER BY date DESC")
     fun observeAllWithCategory(): Flow<List<ExpenseWithCategory>>
+
+    /** What was spent from [start] up to, but not including, [endExclusive]. */
+    @Query("SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE date >= :start AND date < :endExclusive")
+    suspend fun totalBetween(start: Instant, endExclusive: Instant): Long
+
+    @Query("SELECT EXISTS(SELECT 1 FROM categories WHERE id = :categoryId)")
+    suspend fun categoryExists(categoryId: String): Boolean
 }

@@ -9,24 +9,39 @@ import java.time.temporal.ChronoUnit
 
 /** The only place expenses are saved, so the pop-up and the app's screens follow the same rules. */
 class ExpenseService(private val dao: ExpenseDao) {
-    suspend fun add(merchant: String, amount: Long, categoryId: String, date: Instant = Instant.now()): Expense {
+    suspend fun add(
+        merchant: String,
+        amount: Long,
+        categoryId: String,
+        date: Instant = Instant.now(),
+        note: String? = null,
+    ): Expense {
         val expense = Expense(
             merchant = ExpenseRules.validated(merchant, amount),
             amount = amount,
             date = date.toStoredPrecision(),
             categoryId = categoryId,
+            note = ExpenseRules.cleanedNote(note),
         )
         dao.insert(expense)
         return expense
     }
 
-    /** Validates everything first, so an invalid edit leaves the expense untouched. */
-    suspend fun update(expense: Expense, merchant: String, amount: Long, categoryId: String, date: Instant): Expense {
+    /** Validates everything first, so an invalid edit leaves the expense untouched. A null or blank note removes it. */
+    suspend fun update(
+        expense: Expense,
+        merchant: String,
+        amount: Long,
+        categoryId: String,
+        date: Instant,
+        note: String?,
+    ): Expense {
         val updated = expense.copy(
             merchant = ExpenseRules.validated(merchant, amount),
             amount = amount,
             categoryId = categoryId,
             date = date.toStoredPrecision(),
+            note = ExpenseRules.cleanedNote(note),
         )
         dao.update(updated)
         return updated
@@ -34,8 +49,14 @@ class ExpenseService(private val dao: ExpenseDao) {
 
     suspend fun delete(expense: Expense) = dao.delete(expense)
 
-    /** Puts back an expense that was just deleted, for Undo. */
-    suspend fun restore(expense: Expense) = dao.insert(expense)
+    /**
+     * Puts back an expense that was just deleted, for Undo, exactly as it was: same id, note and time.
+     * Fails if its category has been deleted since.
+     */
+    suspend fun restore(expense: Expense) {
+        if (!dao.categoryExists(expense.categoryId)) throw ExpenseError.CategoryNotFound
+        dao.insert(expense)
+    }
 
     /** The database keeps milliseconds; rounding first means the returned expense matches what was stored. */
     private fun Instant.toStoredPrecision(): Instant = truncatedTo(ChronoUnit.MILLIS)

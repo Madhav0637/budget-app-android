@@ -24,8 +24,8 @@ android {
         applicationId = "com.madhav0637.budgetapp"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,7 +59,8 @@ android {
     }
 }
 
-// Saves the database layout to Android/app/schemas so future versions can migrate existing data safely.
+// Saves the database layout to app/schemas so future versions can migrate existing data safely.
+// The Room plugin also packs these files into the on-device tests, where MigrationTest builds a 1.0 database from them.
 room {
     schemaDirectory("$projectDir/schemas")
 }
@@ -69,6 +70,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)

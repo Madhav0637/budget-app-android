@@ -62,6 +62,22 @@ class PeriodCalculatorTest {
     fun periodLabels() {
         assertEquals(listOf("Week", "Month", "Year"), Period.entries.map { it.title })
         assertEquals(listOf("this week", "this month", "this year"), Period.entries.map { it.phrase })
+        assertEquals(listOf("This week", "This month", "This year"), Period.entries.map { it.menuTitle })
+        assertEquals(listOf("last week", "last month", "last year"), Period.entries.map { it.previousPhrase })
+    }
+
+    @Test
+    fun dateIsInsideItsOwnPeriod() {
+        val date = at(2026, 9, 23, 18, 30)
+        for (period in Period.entries) assertTrue(date in calculator.range(period, date))
+    }
+
+    @Test
+    fun daysOfAMonth() {
+        val days = calculator.days(calculator.range(Period.Month, at(2026, 9, 15)))
+        assertEquals(30, days.size)
+        assertEquals(java.time.LocalDate.of(2026, 9, 1), days.first())
+        assertEquals(java.time.LocalDate.of(2026, 9, 30), days.last())
     }
 }
 
@@ -102,6 +118,19 @@ class SpendingSummaryTest {
         assertEquals(listOf("Bills", "Food", "Transport"), summary.categoryTotals.map { it.category.name })
         assertEquals(listOf(500L, 250L, 80L), summary.categoryTotals.map { it.amount })
         assertEquals(summary.total, summary.categoryTotals.sumOf { it.amount })
+    }
+
+    @Test
+    fun categoryTotalsCountTheirExpensesAndShares() {
+        val expenses = listOf(
+            expense(100, food, date = at(2026, 9, 1)),
+            expense(200, food, date = at(2026, 9, 2)),
+            expense(700, bills, date = at(2026, 9, 3)),
+        )
+        val summary = SpendingSummary(expenses, september)
+        assertEquals(listOf(1, 2), summary.categoryTotals.map { it.count })
+        assertEquals(0.7, summary.share(summary.categoryTotals.first()), 1e-9)
+        assertEquals(3, summary.expenses.size)
     }
 
     @Test
